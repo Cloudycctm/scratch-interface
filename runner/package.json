@@ -1,0 +1,23 @@
+{
+    "name": "runner",
+    "module": "index.ts",
+    "type": "module",
+    "scripts": {
+        "build": "bun install --dev && bun run build.ts"
+    },
+    "private": true,
+    "dependencies": {
+        "scratch-storage": "npm:@turbowarp/scratch-storage@^0.0.202505311821",
+        "scratch-vm": "github:swz-git/scratch-vm#febf79a7"
+    },
+    "devDependencies": {
+        "@rsbuild/core": "^1.7.2",
+        "@rsbuild/plugin-node-polyfill": "^1.4.3",
+        "@turbowarp/types": "^0.0.14",
+        "@types/bun": "latest",
+        "@types/node": "25.0.9"
+    },
+    "trustedDependencies": [
+        "scratch-vm"
+    ]
+}
