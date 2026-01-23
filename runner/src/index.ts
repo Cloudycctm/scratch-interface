@@ -1,9 +1,9 @@
-/// <reference path="./node_modules/@turbowarp/types/index.d.ts" />
-/// <reference path="./node_modules/@types/node/index.d.ts" />
+/// <reference path="../node_modules/@turbowarp/types/index.d.ts" />
+/// <reference path="../node_modules/@types/node/index.d.ts" />
 
 import VM from "scratch-vm";
 import Storage from "scratch-storage";
-import RLBotExt from "../plugin/plugin.ts";
+import RLBotExt from "./plugin.ts";
 import { once } from "node:events";
 
 export async function run_vm(raw_scratch_file: ArrayBuffer) {
@@ -28,19 +28,7 @@ export async function run_vm(raw_scratch_file: ArrayBuffer) {
 }
 
 async function main() {
-    const chunks: Buffer[] = [];
-
-    for await (const chunk of process.stdin) {
-        chunks.push(chunk);
-    }
-
-    const buffer = Buffer.concat(chunks);
-    await run_vm(
-        buffer.buffer.slice(
-            buffer.byteOffset,
-            buffer.byteOffset + buffer.byteLength,
-        ),
-    );
+    await run_vm(sb3_loader.load());
 }
 
-main().catch(console.error);
+await main();

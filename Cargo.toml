@@ -11,18 +11,24 @@ lto = "thin"
 
 [dependencies]
 color-eyre = "0.6.5"
+deno_core = "0.377.0"
+deno_error = "0.7.1"
+deno_web = { git = "https://github.com/denoland/deno", tag = "v2.6.5" }
+deno_webidl = { git = "https://github.com/denoland/deno", tag = "v2.6.5" }
+deno_crypto = { git = "https://github.com/denoland/deno", tag = "v2.6.5" }
 mio = "1.1.1"
 rlbot = { git = "https://github.com/rlbot/rust-interface", rev = "32a7dfa" }
 rlbot_flat = { git = "https://github.com/rlbot/rust-interface", rev = "32a7dfa" }
-rustyscript = { version = "0.12.3", default-features = true, features = ["console", "crypto", "websocket", "node_experimental"] }
+serde_json = "1.0.149"
+tokio = { version = "1.49.0", features = ["rt"] }
 # serde_json = "1.0.149"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.22"
 tungstenite = "0.28.0"
-# https://github.com/rscarson/rustyscript/issues/399
-serde = "=1.0.228"
-serde_json = "=1.0.120"
-serde_bytes = "=0.11.15"
+
+[patch.crates-io]
+# yanked, but we need it
+fqdn = { git = "https://github.com/Orange-OpenSource/fqdn", rev = "a473eff" }
 
 [build-dependencies]
 rlbot_flat_dts = { package = "rlbot_flat", git = "https://github.com/rlbot/rust-interface", rev = "2affdb6", features = ["dts"] }

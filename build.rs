@@ -50,8 +50,14 @@ fn main() {
         .status()
         .expect("failed to run bun build, make sure it's installed and in path");
 
-    // std::process::Command::new("bun")
-    //     .args(["build", "plugin/index.ts", "--outfile=plugin/bundle.js"])
-    //     .status()
-    //     .expect("failed to run bun build, make sure it's installed and in path");
+    println!("cargo:rerun-if-changed=runner/src/index.ts");
+    println!("cargo:rerun-if-changed=runner/src/plugin.ts");
+    println!("cargo:rerun-if-changed=runner/build.ts");
+    println!("cargo:rerun-if-changed=runner/package.json");
+
+    std::process::Command::new("bun")
+        .current_dir("./runner")
+        .args(["run", "build"])
+        .status()
+        .expect("failed to run bun, make sure it's installed and in path");
 }

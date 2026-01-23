@@ -8,7 +8,7 @@
     "private": true,
     "dependencies": {
         "scratch-storage": "npm:@turbowarp/scratch-storage@^0.0.202505311821",
-        "scratch-vm": "github:swz-git/scratch-vm#febf79a7"
+        "scratch-vm": "github:swz-git/scratch-vm#18ff91fb"
     },
     "devDependencies": {
         "@rsbuild/core": "^1.7.2",

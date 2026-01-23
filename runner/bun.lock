@@ -6,7 +6,7 @@
       "name": "runner",
       "dependencies": {
         "scratch-storage": "npm:@turbowarp/scratch-storage@^0.0.202505311821",
-        "scratch-vm": "github:swz-git/scratch-vm#febf79a7",
+        "scratch-vm": "github:swz-git/scratch-vm#18ff91fb",
       },
       "devDependencies": {
         "@rsbuild/core": "^1.7.2",
@@ -1335,7 +1335,7 @@
 
     "scratch-translate-extension-languages": ["scratch-translate-extension-languages@1.0.7", "", {}, "sha512-6+bQU9iVYv23T8J0SjpV6MTugm0y8myh/4DPgu1BGfccysdkaWzu3MkNGQyQRUlbqAiW9wM7ctfv3USPEkzTgg=="],
 
-    "scratch-vm": ["scratch-vm@github:swz-git/scratch-vm#febf79a", { "dependencies": { "@babel/core": "7.13.10", "@babel/preset-env": "7.14.8", "@turbowarp/json": "^0.1.2", "@turbowarp/jszip": "^3.11.0", "@turbowarp/nanolog": "^0.2.0", "@vernier/godirect": "1.5.0", "arraybuffer-loader": "^1.0.6", "atob": "2.1.2", "babel-loader": "8.2.2", "btoa": "1.2.1", "canvas-toBlob": "1.0.0", "copy-webpack-plugin": "4.5.4", "cross-env": "^10.1.0", "decode-html": "2.0.0", "diff-match-patch": "1.0.4", "expose-loader": "0.7.5", "file-loader": "2.0.0", "format-message": "6.2.1", "htmlparser2": "3.10.0", "lodash.defaultsdeep": "4.6.1", "scratch-audio": "0.1.0-prerelease.20231221012053", "scratch-blocks": "0.1.0-prerelease.20230527085947", "scratch-l10n": "3.16.20231222031921", "scratch-parser": "github:TurboWarp/scratch-parser#master", "scratch-render": "0.1.0-prerelease.20231220210403", "scratch-render-fonts": "github:TurboWarp/scratch-render-fonts#master", "scratch-storage": "2.3.1", "scratch-translate-extension-languages": "^1.0.7", "uglifyjs-webpack-plugin": "1.2.7", "uuid": "8.3.2", "webpack": "4.47.0", "webpack-cli": "3.1.0", "worker-loader": "^1.1.1" }, "peerDependencies": { "@turbowarp/scratch-svg-renderer": "^1.0.0-202312300007-62fe825" } }, "swz-git-scratch-vm-febf79a"],
+    "scratch-vm": ["scratch-vm@github:swz-git/scratch-vm#18ff91f", { "dependencies": { "@babel/core": "7.13.10", "@babel/preset-env": "7.14.8", "@turbowarp/json": "^0.1.2", "@turbowarp/jszip": "^3.11.0", "@turbowarp/nanolog": "^0.2.0", "@vernier/godirect": "1.5.0", "arraybuffer-loader": "^1.0.6", "atob": "2.1.2", "babel-loader": "8.2.2", "btoa": "1.2.1", "canvas-toBlob": "1.0.0", "copy-webpack-plugin": "4.5.4", "cross-env": "^10.1.0", "decode-html": "2.0.0", "diff-match-patch": "1.0.4", "expose-loader": "0.7.5", "file-loader": "2.0.0", "format-message": "6.2.1", "htmlparser2": "3.10.0", "lodash.defaultsdeep": "4.6.1", "scratch-audio": "0.1.0-prerelease.20231221012053", "scratch-blocks": "0.1.0-prerelease.20230527085947", "scratch-l10n": "3.16.20231222031921", "scratch-parser": "github:TurboWarp/scratch-parser#master", "scratch-render": "0.1.0-prerelease.20231220210403", "scratch-render-fonts": "github:TurboWarp/scratch-render-fonts#master", "scratch-storage": "2.3.1", "scratch-translate-extension-languages": "^1.0.7", "uglifyjs-webpack-plugin": "1.2.7", "uuid": "8.3.2", "webpack": "4.47.0", "webpack-cli": "3.1.0", "worker-loader": "^1.1.1" }, "peerDependencies": { "@turbowarp/scratch-svg-renderer": "^1.0.0-202312300007-62fe825" } }, "swz-git-scratch-vm-18ff91f"],
 
     "seek-bzip": ["seek-bzip@1.0.6", "", { "dependencies": { "commander": "^2.8.1" }, "bin": { "seek-bunzip": "bin/seek-bunzip", "seek-table": "bin/seek-bzip-table" } }, "sha512-e1QtP3YL5tWww8uKaOCQ18UxIT2laNBXHjV/S2WYCiK4udiv8lkG89KRIoCjUagnAmCBurjF4zEVX2ByBbnCjQ=="],
 
@@ -1618,6 +1618,8 @@
     "@turbowarp/jszip/readable-stream": ["readable-stream@2.3.8", "", { "dependencies": { "core-util-is": "~1.0.0", "inherits": "~2.0.3", "isarray": "~1.0.0", "process-nextick-args": "~2.0.0", "safe-buffer": "~5.1.1", "string_decoder": "~1.1.1", "util-deprecate": "~1.0.1" } }, "sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA=="],
 
     "@turbowarp/scratch-svg-renderer/base64-js": ["base64-js@1.2.1", "", {}, "sha512-dwVUVIXsBZXwTuwnXI9RK8sBmgq09NDHzyR9SAph9eqk76gKK2JSQmZARC2zRC81JC2QTtxD0ARU5qTS25gIGw=="],
+
+    "@turbowarp/scratch-svg-renderer/scratch-render-fonts": ["scratch-render-fonts@github:TurboWarp/scratch-render-fonts#7b6768f", { "dependencies": { "base64-loader": "1.0.0" } }, "TurboWarp-scratch-render-fonts-7b6768f"],
 
     "ajv-keywords/ajv": ["ajv@6.12.6", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g=="],
 

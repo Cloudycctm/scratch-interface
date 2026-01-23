@@ -35,9 +35,9 @@ fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt().init();
 
     if let Ok(path_str) = env::var("SB3_PATH") {
-        runner::run_scratch_file(
-            &PathBuf::from_str(&path_str).context("couldn't parse SB3_PATH")?,
-        )?;
+        runner::run_scratch_file(&PathBuf::from_str(&path_str).context("couldn't parse SB3_PATH")?)
+            .map_err(|e| eyre::eyre!(e))
+            .context("Javascript runtime crashed, couldn't run scratch file")?;
     }
 
     // TODO: If port is used, find new one and tell deno about it
