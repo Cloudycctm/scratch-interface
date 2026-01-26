@@ -13,14 +13,19 @@ export async function run_vm(raw_scratch_file: ArrayBuffer) {
     vm.attachStorage(storage);
     vm.setTurboMode(true);
 
-    // @ts-ignore
+    // @ts-ignore needed for unsandboxed extensions
+    globalThis.Scratch.vm = vm;
+    // @ts-ignore this works
     vm.extensionManager.addBuiltinExtension("rlbotv5", RLBotExt);
+
+    // @ts-ignore this also works
+    vm.setFramerate(120);
 
     await vm.loadProject(raw_scratch_file);
     vm.start();
     vm.greenFlag();
 
-    // @ts-ignore
+    // @ts-ignore TODO: This quits early, maybe create wait for exit block?
     await once(vm, "PROJECT_RUN_STOP");
     vm.stopAll();
     vm.quit();

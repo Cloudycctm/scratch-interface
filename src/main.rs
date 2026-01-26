@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::{net::SocketAddr, thread};
 use tracing::{error, info, warn};
-use tungstenite::accept;
+use tungstenite::{HandshakeError, accept};
 
 mod runner;
 
@@ -34,18 +34,27 @@ const TARGET_PACKETRATE: LazyCell<usize> = LazyCell::new(|| {
 fn main() -> eyre::Result<()> {
     tracing_subscriber::fmt().init();
 
-    if let Ok(path_str) = env::var("SB3_PATH") {
-        runner::run_scratch_file(&PathBuf::from_str(&path_str).context("couldn't parse SB3_PATH")?)
-            .map_err(|e| eyre::eyre!(e))
-            .context("Javascript runtime crashed, couldn't run scratch file")?;
-    }
-
     // TODO: If port is used, find new one and tell deno about it
     let server = std::net::TcpListener::bind(SocketAddr::new(
         "127.0.0.1".parse().unwrap(),
         DEFAULT_BRIDGE_PORT,
     ))
     .context(format!("Couldn't listen on port {DEFAULT_BRIDGE_PORT}"))?;
+
+    thread::spawn(|| {
+        if let Ok(path_str) = env::var("SB3_PATH") {
+            runner::run_scratch_file(
+                &PathBuf::from_str(&path_str)
+                    .context("couldn't parse SB3_PATH")
+                    .unwrap(),
+            )
+            .map_err(|e| eyre::eyre!(e))
+            .context("Javascript runtime crashed, couldn't run scratch file")
+            .unwrap();
+            // TODO: We should probably crash the main websocket runtime if this
+            //       happens, since we're likely the only client
+        }
+    });
 
     let mut threads = vec![];
 
@@ -61,7 +70,13 @@ fn main() -> eyre::Result<()> {
             }
         };
 
-        threads.push(thread::spawn(move || handle_client(stream)));
+        threads.push(thread::spawn(move || {
+            let r = handle_client(stream);
+            if let Err(e) = &r {
+                error!("WS handler crashed: {e:?}");
+            };
+            r
+        }));
     }
 
     for t in threads {
@@ -85,11 +100,21 @@ fn build_packet(p: flat::InterfacePacket, builder: &mut planus::Builder) -> eyre
     Ok(output)
 }
 
-fn handle_client(stream: mio::net::TcpStream) -> eyre::Result<()> {
+fn handle_client(mut stream: mio::net::TcpStream) -> eyre::Result<()> {
     stream
         .set_nodelay(true)
         .context("couldn't set nodelay for ws stream")?;
-    let mut websocket = accept(stream).unwrap();
+    let mut websocket = loop {
+        match accept(&mut stream) {
+            Ok(x) => {
+                break x;
+            }
+            Err(HandshakeError::Interrupted(_)) => {
+                continue; // (WouldBlock)
+            }
+            Err(e) => return Err(eyre::eyre!("{e}")),
+        }
+    };
 
     let env = rlbot::util::AgentEnvironment::from_env();
     let mut rlbot_conn = mio::net::TcpStream::connect(env.server_addr.parse()?)
@@ -105,7 +130,7 @@ fn handle_client(stream: mio::net::TcpStream) -> eyre::Result<()> {
         .unwrap();
     poll.registry()
         .register(
-            websocket.get_mut(),
+            *websocket.get_mut(),
             OUTGOING,
             Interest::READABLE | Interest::WRITABLE,
         )

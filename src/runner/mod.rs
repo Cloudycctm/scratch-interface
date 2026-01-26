@@ -1,9 +1,13 @@
 use deno_core::anyhow::Context;
 use deno_core::error::AnyError;
 use deno_core::url::Url;
-use deno_core::{Extension, JsRuntime, OpState, RuntimeOptions, op2, v8};
+use deno_core::{Extension, JsRuntime, OpState, RuntimeOptions, op2};
 use std::path::Path;
 use std::sync::{Arc, LazyLock, RwLock};
+
+// Homemade WebSocket implementation that works somehow
+// not using deno_websocket because of huge bloat from its dependencies
+mod ext_websocket;
 
 static SB3_BUF: LazyLock<RwLock<Box<[u8]>>> = LazyLock::new(|| RwLock::new(Box::new([])));
 
@@ -30,15 +34,11 @@ deno_core::extension!(
 );
 
 pub fn run_scratch_file(_scratch_file: &Path) -> Result<(), AnyError> {
-    // 1. Read the scratch file and load it into SB3_BUF
     let file_data = std::fs::read(_scratch_file).context("failed to read SB3 file")?;
     *SB3_BUF.write().unwrap() = file_data.into_boxed_slice();
 
-    // 2. Load the JS source from your local file system at compile time
     let js_source = include_str!("../../runner/bundle.js");
 
-    // 3. Initialize Extensions
-    // Order matters: webidl and url are often dependencies for web and websocket
     let extensions: Vec<Extension> = vec![
         deno_webidl::deno_webidl::init(),
         deno_web::deno_web::init(
@@ -47,15 +47,11 @@ pub fn run_scratch_file(_scratch_file: &Path) -> Result<(), AnyError> {
             Default::default(),
         ),
         deno_crypto::deno_crypto::init(None),
-        // deno_net::deno_net::init(None, None),
-        // deno_websocket::deno_websocket::init(),
-        sb3_loader::init(),
         main::init(), //
-                      // // // deno_fetch::deno_fetch::init(Default::default()),
-                      //
+        ext_websocket::init(),
+        sb3_loader::init(),
     ];
 
-    // 4. Create the Runtime
     let mut runtime = JsRuntime::new(RuntimeOptions {
         extensions,
         ..Default::default()

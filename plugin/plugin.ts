@@ -60,6 +60,7 @@ class RLBotExt implements Scratch.Extension {
     }
 
     connect(args: any) {
+        // TODO: Override args.PORT when running in headless deno
         console.log(`Connecting to RLBot scratch bridge on port ${args.PORT}`);
         if (this.ws) {
             this.ws.close();
@@ -95,7 +96,15 @@ class RLBotExt implements Scratch.Extension {
         let packet: InterfacePacket = {
             message: { InitComplete: {} },
         };
-        this.ws?.send(JSON.stringify(packet));
+        if (this.ws?.readyState == WebSocket.CONNECTING) {
+            this.ws.onopen = (a) => {
+                // this event handler overrides the on above, that should not be
+                // the case. TODO: fix this in ext_websocket
+                this.ws?.send(JSON.stringify(packet));
+            };
+        } else {
+            this.ws?.send(JSON.stringify(packet));
+        }
     }
 
     sendController() {
