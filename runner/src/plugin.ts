@@ -1,6 +1,4 @@
-import Scratch from "../node_modules/scratch-vm/src/extension-support/tw-extension-api-common.js";
-//@ts-ignore
-globalThis.Scratch = Scratch;
-
-import RLBotExt from "../../plugin/plugin.ts";
+// This needs to be in an import so that it runs before the RLBotExt import
+import "./init-scratch-global.ts";
+import RLBotExt from "../../plugin/src/plugin.ts";
 export default RLBotExt;

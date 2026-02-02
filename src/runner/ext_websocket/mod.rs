@@ -5,6 +5,8 @@ use deno_core::Resource;
 use deno_core::ResourceId;
 use deno_core::ascii_str_include;
 use deno_core::op2;
+use futures_util::stream::SplitSink;
+use futures_util::stream::SplitStream;
 use futures_util::{SinkExt, StreamExt};
 use serde::Serialize;
 use std::cell::RefCell;
@@ -14,9 +16,7 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tracing::warn;
-use tungstenite::protocol::CloseFrame;
 use tungstenite::protocol::Message as WsMessage;
-use tungstenite::protocol::frame::coding::CloseCode;
 
 #[derive(Debug, thiserror::Error, deno_error::JsError)]
 pub enum WebSocketError {
@@ -34,8 +34,11 @@ pub enum WebSocketError {
     // Other(String),
 }
 
+type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
+
 pub struct WebSocketResource {
-    stream: Arc<Mutex<WebSocketStream<MaybeTlsStream<TcpStream>>>>,
+    stream: Arc<Mutex<SplitStream<WsStream>>>,
+    sink: Arc<Mutex<SplitSink<WsStream, WsMessage>>>,
     closed: Arc<Mutex<bool>>,
 }
 
@@ -46,12 +49,12 @@ impl Resource for WebSocketResource {
 
     fn close(self: Rc<Self>) {
         let closed = self.closed.clone();
-        let stream = self.stream.clone();
+        let sink = self.sink.clone();
         deno_core::unsync::spawn(async move {
             let mut closed_guard = closed.lock().await;
             if !*closed_guard {
-                let mut stream_guard = stream.lock().await;
-                let _ = stream_guard.close(None).await;
+                let mut sink_guard = sink.lock().await;
+                let _ = sink_guard.close().await;
                 *closed_guard = true;
             }
         });
@@ -71,8 +74,11 @@ pub async fn op_ws_create(
 
     let (ws_stream, _response) = tokio_tungstenite::connect_async(url).await?;
 
+    let (ws_sink, ws_stream) = ws_stream.split();
+
     let resource = WebSocketResource {
         stream: Arc::new(Mutex::new(ws_stream)),
+        sink: Arc::new(Mutex::new(ws_sink)),
         closed: Arc::new(Mutex::new(false)),
     };
 
@@ -101,8 +107,8 @@ pub async fn op_ws_send_text(
         .resource_table
         .get::<WebSocketResource>(rid)?;
 
-    let mut stream = resource.stream.lock().await;
-    stream.send(WsMessage::Text(text.into())).await?;
+    let mut sink = resource.sink.lock().await;
+    sink.send(WsMessage::Text(text.into())).await?;
     Ok(())
 }
 
@@ -118,8 +124,8 @@ pub async fn op_ws_send_binary(
         .resource_table
         .get::<WebSocketResource>(rid)?;
 
-    let mut stream = resource.stream.lock().await;
-    stream.send(WsMessage::Binary(data.into())).await?;
+    let mut sink = resource.sink.lock().await;
+    sink.send(WsMessage::Binary(data.into())).await?;
     Ok(())
 }
 
@@ -180,8 +186,8 @@ pub async fn op_ws_next_event(
 pub async fn op_ws_close(
     state: Rc<RefCell<OpState>>,
     #[smi] rid: ResourceId,
-    #[smi] code: u16,
-    #[string] reason: String,
+    #[smi] _code: u16,
+    #[string] _reason: String,
 ) -> Result<(), WebSocketError> {
     let resource = state
         .borrow()
@@ -193,18 +199,19 @@ pub async fn op_ws_close(
         return Ok(());
     }
 
-    let mut stream = resource.stream.lock().await;
+    let mut sink = resource.sink.lock().await;
 
-    let close_frame = if code == 1005 || code == 1006 {
-        None
-    } else {
-        Some(CloseFrame {
-            code: CloseCode::from(code),
-            reason: reason.into(),
-        })
-    };
+    // Sink doesn't seem to support close_frames
+    // let close_frame = if code == 1005 || code == 1006 {
+    //     None
+    // } else {
+    //     Some(CloseFrame {
+    //         code: CloseCode::from(code),
+    //         reason: reason.into(),
+    //     })
+    // };
 
-    stream.close(close_frame).await?;
+    sink.close().await?;
     *closed = true;
 
     Ok(())

@@ -6,7 +6,7 @@ import Storage from "scratch-storage";
 import RLBotExt from "./plugin.ts";
 import { once } from "node:events";
 
-export async function run_vm(raw_scratch_file: ArrayBuffer) {
+async function run_vm(raw_scratch_file: ArrayBuffer) {
     const vm = new VM();
     const storage = new Storage();
 
@@ -19,13 +19,13 @@ export async function run_vm(raw_scratch_file: ArrayBuffer) {
     vm.extensionManager.addBuiltinExtension("rlbotv5", RLBotExt);
 
     // @ts-ignore this also works
-    vm.setFramerate(120);
+    vm.setFramerate(240);
 
     await vm.loadProject(raw_scratch_file);
     vm.start();
     vm.greenFlag();
 
-    // @ts-ignore TODO: This quits early, maybe create wait for exit block?
+    // @ts-ignore
     await once(vm, "PROJECT_RUN_STOP");
     vm.stopAll();
     vm.quit();
@@ -33,7 +33,10 @@ export async function run_vm(raw_scratch_file: ArrayBuffer) {
 }
 
 async function main() {
-    await run_vm(sb3_loader.load());
+    // BridgeRuntime is a global provided by the custom deno-based runtime
+    // @ts-ignore
+    globalThis.BRIDGE_PORT = BridgeRuntime.getPort();
+    await run_vm(BridgeRuntime.load());
 }
 
 await main();

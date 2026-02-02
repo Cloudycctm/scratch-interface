@@ -3,7 +3,7 @@ use std::{env, fs, time::SystemTime};
 use rlbot_flat_dts::flat::{CorePacket, InterfacePacket};
 use ts_rs::TS;
 
-const OUTPUT_FILE: &str = "./plugin/rlbot.d.ts";
+const D_TS_OUTPUT_FILE: &str = "./plugin/src/rlbot.d.ts";
 
 fn timestamp_µs_hex() -> String {
     let micros = SystemTime::now()
@@ -40,24 +40,50 @@ fn main() {
 
     fs::remove_dir_all(&temp_dir).expect("remove temp dir");
 
-    fs::write(OUTPUT_FILE, outstr).expect("write output file");
+    fs::write(D_TS_OUTPUT_FILE, outstr).expect("write output file");
 
-    println!("cargo:rerun-if-changed=plugin/index.ts");
-    println!("cargo:rerun-if-changed=plugin/plugin.ts");
+    for entry in glob::glob("plugin/src/**/*.ts").expect("Failed to read glob pattern") {
+        match entry {
+            Ok(path)
+                if !path
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .ends_with("d.ts") =>
+            {
+                println!("cargo:rerun-if-changed={}", path.display())
+            }
+            Ok(_) => {}
+            Err(e) => println!("cargo:warning=Error walking glob: {:?}", e),
+        }
+    }
 
-    std::process::Command::new("bun")
-        .args(["build", "plugin/index.ts", "--outfile=plugin/bundle.js"])
+    let plugin_build_status = std::process::Command::new("bun")
+        .args([
+            "build",
+            "plugin/src/index.ts",
+            "--loader=.svg:dataurl",
+            "--outfile=plugin/bundle.js",
+        ])
         .status()
         .expect("failed to run bun build, make sure it's installed and in path");
+
+    if !plugin_build_status.success() {
+        panic!("failed to run bun build, make sure it's installed and in path");
+    }
 
     println!("cargo:rerun-if-changed=runner/src/index.ts");
     println!("cargo:rerun-if-changed=runner/src/plugin.ts");
     println!("cargo:rerun-if-changed=runner/build.ts");
     println!("cargo:rerun-if-changed=runner/package.json");
 
-    std::process::Command::new("bun")
+    let runner_build_status = std::process::Command::new("bun")
         .current_dir("./runner")
         .args(["run", "build"])
         .status()
         .expect("failed to run bun, make sure it's installed and in path");
+
+    if !runner_build_status.success() {
+        panic!("failed to run bun, make sure it's installed and in path");
+    }
 }

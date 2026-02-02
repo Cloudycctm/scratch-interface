@@ -28,11 +28,14 @@ tungstenite = "0.28.0"
 futures-util = "0.3.31"
 tokio-tungstenite = "0.28.0"
 thiserror = "2.0.18"
+clap = { version = "4.5.54", features = ["derive", "env"] }
+tiny_http = "0.12.0"
 
 [patch.crates-io]
 # yanked, but we need it
 fqdn = { git = "https://github.com/Orange-OpenSource/fqdn", rev = "a473eff" }
 
 [build-dependencies]
+glob = "0.3.3"
 rlbot_flat_dts = { package = "rlbot_flat", git = "https://github.com/rlbot/rust-interface", rev = "2affdb6", features = ["dts"] }
 ts-rs = { version = "11.1.0" }
