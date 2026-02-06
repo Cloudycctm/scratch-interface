@@ -65,9 +65,9 @@ async function RegisterCustomShapes(
     blockArgs: BlockArg[],
     makeShape: (width: number) => string,
 ) {
-    if (Scratch.gui == null) return;
+    if ((Scratch as any).gui == null) return;
 
-    const Blockly: any = await Scratch.gui.getBlockly();
+    const Blockly: any = await (Scratch as any).gui.getBlockly();
 
     // Hijack blockly rendering
     const ogRender = Blockly.BlockSvg.prototype.render;

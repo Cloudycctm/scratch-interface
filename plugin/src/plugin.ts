@@ -4,6 +4,7 @@ import type {
     CorePacket,
     GamePacket,
     InterfacePacket,
+    Rotator,
     Vector3,
 } from "./rlbot";
 // @ts-ignore, bun handles this, see build.rs
@@ -12,20 +13,14 @@ const logo_uri = `data:image/svg+xml;base64,${btoa(logo_svg)}`;
 
 export type CustomBlockShape = "vector";
 
+type ReturnTypes = void | string | boolean | number | Promise<ReturnTypes>;
+
 export const blockConfigs: (
     | {
           block: Scratch.Block;
           shape?: CustomBlockShape;
           argShapes?: Record<string, CustomBlockShape>;
-          fn: (
-              this: RLBotExt,
-              args: any,
-          ) =>
-              | void
-              | string
-              | boolean
-              | number
-              | Promise<void | string | boolean | number>;
+          fn: (this: RLBotExt, args: any) => ReturnTypes;
       }
     | string
 )[] = [
@@ -309,12 +304,12 @@ export const blockConfigs: (
             this.controller.handbrake = Boolean(args.VALUE);
         },
     },
-    "Vector ops",
+    "Vector/Rotator ops",
     {
         block: {
             opcode: "getComponent",
             blockType: Scratch.BlockType.REPORTER,
-            text: "get [COMPONENT] of [VECTOR]",
+            text: "[COMPONENT] of [VECTOR]",
             arguments: {
                 COMPONENT: {
                     type: Scratch.ArgumentType.STRING,
@@ -329,6 +324,30 @@ export const blockConfigs: (
         argShapes: { VECTOR: "vector" },
         fn(args) {
             return parseVector(args.VECTOR)[args.COMPONENT as "x" | "y" | "z"];
+        },
+    },
+    {
+        block: {
+            opcode: "getComponentRotator",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "[COMPONENT] of [ROTATOR]",
+            arguments: {
+                COMPONENT: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "PYR",
+                },
+                ROTATOR: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        // todo: add custom shape for rotators
+        argShapes: { ROTATOR: "vector" },
+        fn(args) {
+            return parseRotator(args.ROTATOR)[
+                args.COMPONENT as "pitch" | "yaw" | "roll"
+            ];
         },
     },
     "GamePacket",
@@ -347,6 +366,128 @@ export const blockConfigs: (
                     z: 0,
                 },
             );
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBallVelocity",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "ball velocity",
+        },
+        shape: "vector",
+        fn(_) {
+            return stringifyVector(
+                this.lastGamePacket?.balls[0].physics.velocity ?? {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerPosition",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "position of player [ID]",
+            arguments: {
+                ID: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            if (!this.lastGamePacket) return "null";
+            let vec = this.lastGamePacket.players.find(
+                (p) => p.player_id == args.ID,
+            )?.physics?.location;
+            return vec != undefined ? stringifyVector(vec) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerRotation",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "rotation of player [ID]",
+            arguments: {
+                ID: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        // todo: custom shape this
+        shape: "vector",
+        fn(args: any) {
+            if (!this.lastGamePacket) return "null";
+            let rot = this.lastGamePacket.players.find(
+                (p) => p.player_id == args.ID,
+            )?.physics?.rotation;
+            return rot != undefined
+                ? // use same internal rep
+                  stringifyVector({
+                      x: rot?.pitch,
+                      y: rot?.yaw,
+                      z: rot?.roll,
+                  })
+                : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerIdTeammate",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "player id of teammate [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args: any) {
+            if (!this.lastGamePacket) return "null";
+            return (
+                this.lastGamePacket.players
+                    .filter((player) => player.team === this.ourTeam?.team)
+                    .map((player) => player.player_id)[args?.INDEX ?? 0] ??
+                "null"
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerIdOpponent",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "player id of opponent [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args: any) {
+            if (!this.lastGamePacket) return "null";
+            return (
+                this.lastGamePacket.players
+                    .filter((player) => player.team !== this.ourTeam?.team)
+                    .map((player) => player.player_id)[args?.INDEX ?? 0] ??
+                "null"
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerIdOurs",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "our player id",
+        },
+        fn(args: any) {
+            if (!this.ourTeam) return "null";
+            return this.ourTeam.controllables[0].identifier;
         },
     },
     "Match info",
@@ -401,6 +542,26 @@ function stringifyVector(v: Vector3): string {
     return JSON.stringify([v.x, v.y, v.z]);
 }
 
+// [0,0,0] to Rotator
+function parseRotator(s: string): Rotator {
+    let parsed = JSON.parse(s);
+    if (Array.isArray(parsed) && parsed.length === 3) {
+        return {
+            pitch: +parsed[0],
+            yaw: +parsed[1],
+            roll: +parsed[2],
+        };
+    }
+    throw new Error(`Invalid rotator string: ${JSON.stringify(parsed)}`);
+}
+
+// Rotator to [0,0,0]
+function stringifyRotator(r: Rotator): string {
+    return JSON.stringify([r.pitch, r.yaw, r.roll]);
+}
+
+// Needs to be changed in case of breaking changes, see
+// https://docs.turbowarp.org/development/extensions/compatibility
 export const EXT_ID = "rlbotv5";
 
 class RLBotExt implements Scratch.Extension {
@@ -422,7 +583,8 @@ class RLBotExt implements Scratch.Extension {
     connectResolveList: ((_: void) => void)[] = [];
 
     constructor() {
-        Scratch.vm.runtime.addListener("PROJECT_STOP_ALL", () => {
+        // Missing in d.ts, but exists in unsandboxed exts
+        (Scratch as any).vm.runtime.addListener("PROJECT_STOP_ALL", () => {
             this.ws?.close();
         });
     }
@@ -436,6 +598,7 @@ class RLBotExt implements Scratch.Extension {
             blocks: blockConfigs.map((cfg) => {
                 if (typeof cfg === "string")
                     return {
+                        // @ts-ignore Missing in d.ts, but exists
                         blockType: Scratch.BlockType.LABEL,
                         text: cfg,
                     } as Scratch.Block;
@@ -443,6 +606,7 @@ class RLBotExt implements Scratch.Extension {
             }),
             menus: {
                 XYZ: ["x", "y", "z"],
+                PYR: ["pitch", "yaw", "roll"],
             },
         };
     }
