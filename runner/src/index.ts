@@ -3,7 +3,7 @@
 
 import VM from "scratch-vm";
 import Storage from "scratch-storage";
-import RLBotExt from "./plugin.ts";
+import { RLBotExt, EXT_ID } from "./plugin.ts";
 import { once } from "node:events";
 
 async function run_vm(raw_scratch_file: ArrayBuffer) {
@@ -16,7 +16,7 @@ async function run_vm(raw_scratch_file: ArrayBuffer) {
     // @ts-ignore needed for unsandboxed extensions
     globalThis.Scratch.vm = vm;
     // @ts-ignore this works
-    vm.extensionManager.addBuiltinExtension("rlbotv5", RLBotExt);
+    vm.extensionManager.addBuiltinExtension(EXT_ID, RLBotExt);
 
     // @ts-ignore this also works
     vm.setFramerate(240);

@@ -12,6 +12,7 @@ import RLBotExt, {
 
     let shapeBlocksMap: Record<CustomBlockShape, string[]> = {
         vector: [],
+        rotator: [],
     };
     for (let cfg of blockConfigs) {
         if (typeof cfg === "string") continue;
@@ -22,6 +23,7 @@ import RLBotExt, {
 
     let shapeBlockArgsMap: Record<CustomBlockShape, BlockArg[]> = {
         vector: [],
+        rotator: [],
     };
     for (let cfg of blockConfigs) {
         if (typeof cfg === "string") continue;
@@ -40,6 +42,11 @@ import RLBotExt, {
         shapeBlockArgsMap.vector,
         makeVectorShape,
     );
+    RegisterCustomShapes(
+        shapeBlocksMap.rotator,
+        shapeBlockArgsMap.rotator,
+        makeRotatorShape,
+    );
 
     Scratch.extensions.register(new RLBotExt());
 })(Scratch);
@@ -52,6 +59,28 @@ function makeVectorShape(width: number) {
             L7 20
             L-5 0
             H${width - 7}
+            Z`
+        .replaceAll("\n", "")
+        .trim();
+}
+
+function makeRotatorShape(width: number) {
+    let padding_left = 5;
+    let padding_right = 5;
+
+    let arrow_scale_x = 0.6;
+    let arrow_shaft_inset = 6 * arrow_scale_x;
+    let arrow_head_inset = 22 * arrow_scale_x;
+
+    return `M${width + padding_right - arrow_shaft_inset} 20
+            H${width + padding_right - arrow_head_inset}
+            L${width + padding_right} 40
+            H${arrow_shaft_inset - padding_left}
+            V20
+            H${arrow_head_inset - padding_left}
+            L${-padding_left} 0
+            H${width + padding_right - arrow_shaft_inset}
+            V20
             Z`
         .replaceAll("\n", "")
         .trim();

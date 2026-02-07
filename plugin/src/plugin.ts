@@ -11,7 +11,7 @@ import type {
 import logo_svg from "../logo.svg" with { type: "text" };
 const logo_uri = `data:image/svg+xml;base64,${btoa(logo_svg)}`;
 
-export type CustomBlockShape = "vector";
+export type CustomBlockShape = "vector" | "rotator";
 
 type ReturnTypes = void | string | boolean | number | Promise<ReturnTypes>;
 
@@ -77,7 +77,7 @@ export const blockConfigs: (
                 if (gamepacket != null) {
                     this.lastGamePacket = gamepacket;
                     // @ts-ignore; the types are for unsandboxed extension, we're not
-                    Scratch.vm.runtime.startHats("rlbotv5_onTick");
+                    Scratch.vm.runtime.startHats(`${EXT_ID}_onTick`);
                 }
 
                 let controllerteaminfo = (
@@ -92,16 +92,6 @@ export const blockConfigs: (
             };
             return promise;
         },
-    },
-    {
-        block: {
-            opcode: "onTick",
-            blockType: Scratch.BlockType.EVENT,
-            text: "every game tick",
-            isEdgeActivated: false,
-            shouldRestartExistingThreads: false,
-        },
-        fn(_) {},
     },
     {
         block: {
@@ -123,6 +113,16 @@ export const blockConfigs: (
 
             this.ws?.send(JSON.stringify(packet));
         },
+    },
+    {
+        block: {
+            opcode: "onTick",
+            blockType: Scratch.BlockType.EVENT,
+            text: "every game tick",
+            isEdgeActivated: false,
+            shouldRestartExistingThreads: false,
+        },
+        fn(_) {},
     },
     {
         block: {
@@ -342,56 +342,393 @@ export const blockConfigs: (
                 },
             },
         },
-        // todo: add custom shape for rotators
-        argShapes: { ROTATOR: "vector" },
+        argShapes: { ROTATOR: "rotator" },
         fn(args) {
             return parseRotator(args.ROTATOR)[
                 args.COMPONENT as "pitch" | "yaw" | "roll"
             ];
         },
     },
-    "GamePacket",
+    {
+        block: {
+            opcode: "vectorAdd",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "[A] + [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector", B: "vector" },
+        shape: "vector",
+        fn(args) {
+            let a = parseVector(args.A);
+            let b = parseVector(args.B);
+            return stringifyVector({
+                x: a.x + b.x,
+                y: a.y + b.y,
+                z: a.z + b.z,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorSub",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "[A] - [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector", B: "vector" },
+        shape: "vector",
+        fn(args) {
+            let a = parseVector(args.A);
+            let b = parseVector(args.B);
+            return stringifyVector({
+                x: a.x - b.x,
+                y: a.y - b.y,
+                z: a.z - b.z,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorScale",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "[A] * [S]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                S: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 1,
+                },
+            },
+        },
+        argShapes: { A: "vector" },
+        shape: "vector",
+        fn(args) {
+            let a = parseVector(args.A);
+            let s = Number(args.S);
+            return stringifyVector({
+                x: a.x * s,
+                y: a.y * s,
+                z: a.z * s,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorDot",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "dot [A] [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector", B: "vector" },
+        fn(args) {
+            let a = parseVector(args.A);
+            let b = parseVector(args.B);
+            return a.x * b.x + a.y * b.y + a.z * b.z;
+        },
+    },
+    {
+        block: {
+            opcode: "vectorCross",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "cross [A] [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector", B: "vector" },
+        shape: "vector",
+        fn(args) {
+            let a = parseVector(args.A);
+            let b = parseVector(args.B);
+            return stringifyVector({
+                x: a.y * b.z - a.z * b.y,
+                y: a.z * b.x - a.x * b.z,
+                z: a.x * b.y - a.y * b.x,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorMagnitude",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "magnitude [A]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector" },
+        fn(args) {
+            let a = parseVector(args.A);
+            return Math.hypot(a.x, a.y, a.z);
+        },
+    },
+    {
+        block: {
+            opcode: "vectorNormalize",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "normalize [A]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector" },
+        shape: "vector",
+        fn(args) {
+            let a = parseVector(args.A);
+            let mag = Math.hypot(a.x, a.y, a.z);
+            if (mag === 0) return stringifyVector({ x: 0, y: 0, z: 0 });
+            return stringifyVector({
+                x: a.x / mag,
+                y: a.y / mag,
+                z: a.z / mag,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorDistance",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "distance [A] [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: { A: "vector", B: "vector" },
+        fn(args) {
+            let a = parseVector(args.A);
+            let b = parseVector(args.B);
+            return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+        },
+    },
+    "GamePacket - Counts",
+    {
+        block: {
+            opcode: "gamePacketPlayersCount",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "players count",
+        },
+        fn(_) {
+            return this.lastGamePacket?.players.length ?? 0;
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBallsCount",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "balls count",
+        },
+        fn(_) {
+            return this.lastGamePacket?.balls.length ?? 0;
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBoostPadsCount",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "boost pads count",
+        },
+        fn(_) {
+            return this.lastGamePacket?.boost_pads.length ?? 0;
+        },
+    },
+    "GamePacket - Balls",
     {
         block: {
             opcode: "gamePacketBallLocation",
             blockType: Scratch.BlockType.REPORTER,
-            text: "ball location",
+            text: "ball [INDEX] location",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
         },
         shape: "vector",
-        fn(_) {
-            return stringifyVector(
-                this.lastGamePacket?.balls[0].physics.location ?? {
-                    x: 0,
-                    y: 0,
-                    z: 0,
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return "null";
+            return stringifyVector(ball.physics.location);
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBallRotation",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "ball [INDEX] rotation",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
                 },
-            );
+            },
+        },
+        shape: "rotator",
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return "null";
+            return stringifyVector({
+                x: ball.physics.rotation.pitch,
+                y: ball.physics.rotation.yaw,
+                z: ball.physics.rotation.roll,
+            });
         },
     },
     {
         block: {
             opcode: "gamePacketBallVelocity",
             blockType: Scratch.BlockType.REPORTER,
-            text: "ball velocity",
+            text: "ball [INDEX] velocity",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
         },
         shape: "vector",
-        fn(_) {
-            return stringifyVector(
-                this.lastGamePacket?.balls[0].physics.velocity ?? {
-                    x: 0,
-                    y: 0,
-                    z: 0,
-                },
-            );
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return "null";
+            return stringifyVector(ball.physics.velocity);
         },
     },
     {
         block: {
+            opcode: "gamePacketBallAngularVelocity",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "ball [INDEX] angular velocity",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return "null";
+            return stringifyVector(ball.physics.angular_velocity);
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBallShapeType",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "ball [INDEX] shape type",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return "null";
+            if ("BoxShape" in ball.shape) return "box";
+            if ("SphereShape" in ball.shape) return "sphere";
+            if ("CylinderShape" in ball.shape) return "cylinder";
+            return "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBallShapeDim",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "ball [INDEX] shape [DIM]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+                DIM: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "BALL_SHAPE_DIM",
+                },
+            },
+        },
+        fn(args) {
+            let ball = this.lastGamePacket?.balls?.[args?.INDEX ?? 0];
+            if (!ball) return 0;
+            if ("BoxShape" in ball.shape) {
+                let box = ball.shape.BoxShape;
+                return box[args.DIM as "length" | "width" | "height"] ?? 0;
+            }
+            if ("SphereShape" in ball.shape) {
+                let sphere = ball.shape.SphereShape;
+                return args.DIM === "diameter" ? sphere.diameter : 0;
+            }
+            if ("CylinderShape" in ball.shape) {
+                let cyl = ball.shape.CylinderShape;
+                return args.DIM === "height"
+                    ? cyl.height
+                    : args.DIM === "diameter"
+                      ? cyl.diameter
+                      : 0;
+            }
+            return 0;
+        },
+    },
+    "GamePacket - Players",
+    {
+        block: {
             opcode: "gamePacketPlayerPosition",
             blockType: Scratch.BlockType.REPORTER,
-            text: "position of player [ID]",
+            text: "position of player [INDEX]",
             arguments: {
-                ID: {
+                INDEX: {
                     type: "number",
                     defaultValue: 0,
                 },
@@ -399,10 +736,8 @@ export const blockConfigs: (
         },
         shape: "vector",
         fn(args: any) {
-            if (!this.lastGamePacket) return "null";
-            let vec = this.lastGamePacket.players.find(
-                (p) => p.player_id == args.ID,
-            )?.physics?.location;
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let vec = player?.physics?.location;
             return vec != undefined ? stringifyVector(vec) : "null";
         },
     },
@@ -410,21 +745,18 @@ export const blockConfigs: (
         block: {
             opcode: "gamePacketPlayerRotation",
             blockType: Scratch.BlockType.REPORTER,
-            text: "rotation of player [ID]",
+            text: "rotation of player [INDEX]",
             arguments: {
-                ID: {
+                INDEX: {
                     type: "number",
                     defaultValue: 0,
                 },
             },
         },
-        // todo: custom shape this
-        shape: "vector",
+        shape: "rotator",
         fn(args: any) {
-            if (!this.lastGamePacket) return "null";
-            let rot = this.lastGamePacket.players.find(
-                (p) => p.player_id == args.ID,
-            )?.physics?.rotation;
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let rot = player?.physics?.rotation;
             return rot != undefined
                 ? // use same internal rep
                   stringifyVector({
@@ -437,9 +769,274 @@ export const blockConfigs: (
     },
     {
         block: {
-            opcode: "gamePacketPlayerIdTeammate",
+            opcode: "gamePacketPlayerVelocity",
             blockType: Scratch.BlockType.REPORTER,
-            text: "player id of teammate [INDEX]",
+            text: "velocity of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let vec = player?.physics?.velocity;
+            return vec != undefined ? stringifyVector(vec) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerAngularVelocity",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "angular velocity of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let vec = player?.physics?.angular_velocity;
+            return vec != undefined ? stringifyVector(vec) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerHitbox",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "hitbox [DIM] of player [INDEX]",
+            arguments: {
+                DIM: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "HITBOX_DIM",
+                },
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let hitbox = player?.hitbox;
+            if (!hitbox) return 0;
+            return hitbox[args.DIM as "length" | "width" | "height"] ?? 0;
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerHitboxOffset",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "hitbox offset of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let vec = player?.hitbox_offset;
+            return vec != undefined ? stringifyVector(vec) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerDodgeDir",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "dodge direction of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let dir = player?.dodge_dir;
+            return dir != undefined
+                ? stringifyVector({ x: dir.x, y: dir.y, z: 0 })
+                : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerLatestTouchLocation",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "latest touch location of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let loc = player?.latest_touch?.location;
+            return loc != undefined ? stringifyVector(loc) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerLatestTouchNormal",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "latest touch normal of player [INDEX]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            let normal = player?.latest_touch?.normal;
+            return normal != undefined ? stringifyVector(normal) : "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketBoolean",
+            blockType: Scratch.BlockType.BOOLEAN,
+            text: "game [FIELD] [INDEX]",
+            arguments: {
+                FIELD: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "GAME_BOOLEAN",
+                },
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args: any) {
+            let field = String(args.FIELD);
+            let index = Number(args.INDEX ?? 0);
+
+            if (field === "match_is_overtime") {
+                return this.lastGamePacket?.match_info?.is_overtime ?? false;
+            }
+            if (field === "match_is_unlimited_time") {
+                return (
+                    this.lastGamePacket?.match_info?.is_unlimited_time ?? false
+                );
+            }
+            if (field === "boost_pad_active") {
+                return (
+                    this.lastGamePacket?.boost_pads?.[index]?.is_active ?? false
+                );
+            }
+
+            let player = this.lastGamePacket?.players?.[index];
+            if (!player) return false;
+
+            if (field === "player_has_jumped") return player.has_jumped;
+            if (field === "player_has_double_jumped")
+                return player.has_double_jumped;
+            if (field === "player_has_dodged") return player.has_dodged;
+            if (field === "player_is_supersonic") return player.is_supersonic;
+            if (field === "player_is_bot") return player.is_bot;
+
+            let input = player.last_input;
+            if (field === "player_last_input_jump") return input.jump;
+            if (field === "player_last_input_boost") return input.boost;
+            if (field === "player_last_input_handbrake") return input.handbrake;
+            if (field === "player_last_input_use_item") return input.use_item;
+
+            return false;
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerNumber",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "player [INDEX] [FIELD]",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+                FIELD: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "PLAYER_NUMBER",
+                },
+            },
+        },
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            if (!player) return 0;
+            if (args.FIELD === "score") return player.score_info.score;
+            if (args.FIELD === "goals") return player.score_info.goals;
+            if (args.FIELD === "own_goals") return player.score_info.own_goals;
+            if (args.FIELD === "assists") return player.score_info.assists;
+            if (args.FIELD === "saves") return player.score_info.saves;
+            if (args.FIELD === "shots") return player.score_info.shots;
+            if (args.FIELD === "demolitions")
+                return player.score_info.demolitions;
+            if (args.FIELD === "last_input_throttle")
+                return player.last_input.throttle;
+            if (args.FIELD === "last_input_steer")
+                return player.last_input.steer;
+            if (args.FIELD === "last_input_pitch")
+                return player.last_input.pitch;
+            if (args.FIELD === "last_input_yaw") return player.last_input.yaw;
+            if (args.FIELD === "last_input_roll") return player.last_input.roll;
+            if (args.FIELD === "team") return player.team;
+            if (args.FIELD === "boost") return player.boost;
+            if (args.FIELD === "player_id") return player.player_id;
+            if (args.FIELD === "dodge_timeout") return player.dodge_timeout;
+            if (args.FIELD === "demolished_timeout")
+                return player.demolished_timeout;
+            if (args.FIELD === "dodge_elapsed") return player.dodge_elapsed;
+            if (args.FIELD === "latest_touch_game_seconds")
+                return player.latest_touch?.game_seconds ?? 0;
+            if (args.FIELD === "latest_touch_ball_index")
+                return player.latest_touch?.ball_index ?? -1;
+            return 0;
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerString",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "player [INDEX] [FIELD] text",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+                FIELD: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "PLAYER_STRING",
+                },
+            },
+        },
+        fn(args: any) {
+            let player = this.lastGamePacket?.players?.[args?.INDEX ?? 0];
+            if (!player) return "null";
+            if (args.FIELD === "name") return player.name;
+            if (args.FIELD === "air_state") return player.air_state;
+            return "null";
+        },
+    },
+    {
+        block: {
+            opcode: "gamePacketPlayerIndexTeammate",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "player index of teammate [INDEX]",
             arguments: {
                 INDEX: {
                     type: "number",
@@ -449,19 +1046,19 @@ export const blockConfigs: (
         },
         fn(args: any) {
             if (!this.lastGamePacket) return "null";
-            return (
-                this.lastGamePacket.players
-                    .filter((player) => player.team === this.ourTeam?.team)
-                    .map((player) => player.player_id)[args?.INDEX ?? 0] ??
-                "null"
-            );
+            let indices = this.lastGamePacket.players
+                .map((player, index) =>
+                    player.team === this.ourTeam?.team ? index : -1,
+                )
+                .filter((index) => index !== -1);
+            return indices[args?.INDEX ?? 0] ?? "null";
         },
     },
     {
         block: {
-            opcode: "gamePacketPlayerIdOpponent",
+            opcode: "gamePacketPlayerIndexOpponent",
             blockType: Scratch.BlockType.REPORTER,
-            text: "player id of opponent [INDEX]",
+            text: "player index of opponent [INDEX]",
             arguments: {
                 INDEX: {
                     type: "number",
@@ -471,34 +1068,103 @@ export const blockConfigs: (
         },
         fn(args: any) {
             if (!this.lastGamePacket) return "null";
-            return (
-                this.lastGamePacket.players
-                    .filter((player) => player.team !== this.ourTeam?.team)
-                    .map((player) => player.player_id)[args?.INDEX ?? 0] ??
-                "null"
-            );
+            let indices = this.lastGamePacket.players
+                .map((player, index) =>
+                    player.team !== this.ourTeam?.team ? index : -1,
+                )
+                .filter((index) => index !== -1);
+            return indices[args?.INDEX ?? 0] ?? "null";
         },
     },
     {
         block: {
-            opcode: "gamePacketPlayerIdOurs",
+            opcode: "gamePacketPlayerIndexOurs",
             blockType: Scratch.BlockType.REPORTER,
-            text: "our player id",
+            text: "our player index",
         },
         fn(args: any) {
             if (!this.ourTeam) return "null";
-            return this.ourTeam.controllables[0].identifier;
+            return this.ourTeam.controllables[0].index;
         },
     },
-    "Match info",
+    "GamePacket - Match",
     {
         block: {
-            opcode: "matchInfoSecondsElapsed",
+            opcode: "matchInfoNumber",
             blockType: Scratch.BlockType.REPORTER,
-            text: "seconds elapsed",
+            text: "match [FIELD]",
+            arguments: {
+                FIELD: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "MATCH_NUMBER",
+                },
+            },
         },
         fn(args) {
-            return this.lastGamePacket?.match_info.seconds_elapsed ?? 0;
+            let match = this.lastGamePacket?.match_info;
+            if (!match) return 0;
+            if (args.FIELD === "seconds_elapsed") return match.seconds_elapsed;
+            if (args.FIELD === "game_time_remaining")
+                return match.game_time_remaining;
+            if (args.FIELD === "world_gravity_z") return match.world_gravity_z;
+            if (args.FIELD === "game_speed") return match.game_speed;
+            if (args.FIELD === "last_spectated") return match.last_spectated;
+            if (args.FIELD === "frame_num") return match.frame_num;
+            return 0;
+        },
+    },
+    {
+        block: {
+            opcode: "matchInfoString",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "match [FIELD] text",
+            arguments: {
+                FIELD: {
+                    type: Scratch.ArgumentType.STRING,
+                    menu: "MATCH_STRING",
+                },
+            },
+        },
+        fn(args) {
+            let match = this.lastGamePacket?.match_info;
+            if (!match) return "null";
+            if (args.FIELD === "match_phase") return match.match_phase;
+            return "null";
+        },
+    },
+    "GamePacket - Teams/Boost",
+    {
+        block: {
+            opcode: "teamScore",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "team [INDEX] score",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            if (!this.lastGamePacket) return 0;
+            return this.lastGamePacket.teams[args?.INDEX ?? 0]?.score ?? 0;
+        },
+    },
+    {
+        block: {
+            opcode: "boostPadTimer",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "boost pad [INDEX] timer",
+            arguments: {
+                INDEX: {
+                    type: "number",
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            if (!this.lastGamePacket) return 0;
+            return this.lastGamePacket.boost_pads[args?.INDEX ?? 0]?.timer ?? 0;
         },
     },
     "Boolean values",
@@ -562,7 +1228,7 @@ function stringifyRotator(r: Rotator): string {
 
 // Needs to be changed in case of breaking changes, see
 // https://docs.turbowarp.org/development/extensions/compatibility
-export const EXT_ID = "rlbotv5";
+export const EXT_ID = "rlbotv5pluginv0";
 
 class RLBotExt implements Scratch.Extension {
     ws: undefined | WebSocket;
@@ -607,6 +1273,54 @@ class RLBotExt implements Scratch.Extension {
             menus: {
                 XYZ: ["x", "y", "z"],
                 PYR: ["pitch", "yaw", "roll"],
+                BALL_SHAPE_DIM: ["length", "width", "height", "diameter"],
+                HITBOX_DIM: ["length", "width", "height"],
+                GAME_BOOLEAN: [
+                    "player_has_jumped",
+                    "player_has_double_jumped",
+                    "player_has_dodged",
+                    "player_is_supersonic",
+                    "player_is_bot",
+                    "player_last_input_jump",
+                    "player_last_input_boost",
+                    "player_last_input_handbrake",
+                    "player_last_input_use_item",
+                    "match_is_overtime",
+                    "match_is_unlimited_time",
+                    "boost_pad_active",
+                ],
+                PLAYER_NUMBER: [
+                    "score",
+                    "goals",
+                    "own_goals",
+                    "assists",
+                    "saves",
+                    "shots",
+                    "demolitions",
+                    "last_input_throttle",
+                    "last_input_steer",
+                    "last_input_pitch",
+                    "last_input_yaw",
+                    "last_input_roll",
+                    "team",
+                    "boost",
+                    "player_id",
+                    "dodge_timeout",
+                    "demolished_timeout",
+                    "dodge_elapsed",
+                    "latest_touch_game_seconds",
+                    "latest_touch_ball_index",
+                ],
+                PLAYER_STRING: ["name", "air_state"],
+                MATCH_NUMBER: [
+                    "seconds_elapsed",
+                    "game_time_remaining",
+                    "world_gravity_z",
+                    "game_speed",
+                    "last_spectated",
+                    "frame_num",
+                ],
+                MATCH_STRING: ["match_phase"],
             },
         };
     }
@@ -615,7 +1329,14 @@ class RLBotExt implements Scratch.Extension {
 for (let cfg of blockConfigs) {
     if (typeof cfg === "string") continue;
     if (!("opcode" in cfg.block)) continue;
-    (RLBotExt.prototype as any)[cfg.block.opcode] = cfg.fn;
+    (RLBotExt.prototype as any)[cfg.block.opcode] = function (...args: any[]) {
+        try {
+            return cfg.fn.call(this, args[0]);
+        } catch (error) {
+            // if we don't catch errors, execution freezes
+            return `ERR: ${error}`;
+        }
+    };
 }
 
 export default RLBotExt;
