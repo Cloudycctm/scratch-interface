@@ -540,6 +540,76 @@ export const blockConfigs: (
     },
     {
         block: {
+            opcode: "vectorFlatten",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "flatten [VECTOR]",
+            arguments: {
+                VECTOR: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,0,0]",
+                },
+            },
+        },
+        argShapes: {
+            VECTOR: "vector",
+        },
+        shape: "vector",
+        fn(args) {
+            const vector = parseVector(args.VECTOR);
+
+            return stringifyVector({
+                x: vector.x,
+                y: vector.y,
+                z: 0,
+            });
+        },
+    },
+    {
+        block: {
+            opcode: "vectorAngle2D",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "2D angle between [A] and [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[1,0,0]",
+                },
+                B: {
+                    type: Scratch.ArgumentType.STRING,
+                    defaultValue: "[0,1,0]",
+                },
+            },
+        },
+        argShapes: {
+            A: "vector",
+            B: "vector",
+        },
+        fn(args) {
+            const a = parseVector(args.A);
+            const b = parseVector(args.B);
+
+            const aLength = Math.sqrt(
+                a.x * a.x + a.y * a.y,
+            );
+            const bLength = Math.sqrt(
+                b.x * b.x + b.y * b.y,
+            );
+
+            if (aLength === 0 || bLength === 0) {
+                return 0;
+            }
+
+            const dot = a.x * b.x + a.y * b.y;
+            const cross = a.x * b.y - a.y * b.x;
+
+            return Math.atan2(
+                Math.abs(cross),
+                dot
+            );
+        },
+    },
+    {
+        block: {
             opcode: "getComponent",
             blockType: Scratch.BlockType.REPORTER,
             text: "[COMPONENT] of [VECTOR]",
