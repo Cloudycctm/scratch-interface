@@ -485,6 +485,29 @@ export const blockConfigs: (
             );
         },
     },
+    {
+        block: {
+            opcode: "sign",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "sign of [X]",
+            arguments: {
+                X: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            const x = Number(args.X);
+            if (x > 0) {
+                return 1;
+            }
+            if (x < 0) {
+                return -1;
+            }
+            return 0;
+        },
+    },
     "Vector/Rotator ops",
     {
         block: {
