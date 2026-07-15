@@ -374,7 +374,7 @@ export const blockConfigs: (
             );
         },
     },
-    {
+     {
         block: {
             opcode: "clamp",
             blockType: Scratch.BlockType.REPORTER,
@@ -405,6 +405,83 @@ export const blockConfigs: (
             return Math.min(
                 Math.max(value, lowerBound),
                 upperBound,
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "sinRadians",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "sin radians [ANGLE]",
+            arguments: {
+                ANGLE: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            return Math.sin(
+                Number(args.ANGLE),
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "cosRadians",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "cos radians [ANGLE]",
+            arguments: {
+                ANGLE: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            return Math.cos(
+                Number(args.ANGLE),
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "tanRadians",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "tan radians [ANGLE]",
+            arguments: {
+                ANGLE: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            return Math.tan(
+                Number(args.ANGLE),
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "pow",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "[NUMBER] to the power of [POWER]",
+            arguments: {
+                NUMBER: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 2,
+                },
+                POWER: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 2,
+                },
+            },
+        },
+        fn(args) {
+            return Math.pow(
+                Number(args.NUMBER),
+                Number(args.POWER),
             );
         },
     },
