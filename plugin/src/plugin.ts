@@ -304,6 +304,30 @@ export const blockConfigs: (
             this.controller.handbrake = Boolean(args.VALUE);
         },
     },
+    "Math",
+    {
+        block: {
+            opcode: "atan2",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "atan2 y [Y] x [X]",
+            arguments: {
+                Y: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                X: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 1,
+                },
+            },
+        },
+        fn(args) {
+            return Math.atan2(
+                Number(args.Y),
+                Number(args.X),
+            );
+        },
+    },
     "Vector/Rotator ops",
     {
         block: {
