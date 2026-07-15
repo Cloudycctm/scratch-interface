@@ -307,6 +307,35 @@ export const blockConfigs: (
     "Vector/Rotator ops",
     {
         block: {
+            opcode: "vectorCreate",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "vector x [X] y [Y] z [Z]",
+            arguments: {
+                X: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                Y: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                Z: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        shape: "vector",
+        fn(args) {
+            return stringifyVector({
+                x: Number(args.X),
+                y: Number(args.Y),
+                z: Number(args.Z),
+            });
+        },
+    },
+    {
+        block: {
             opcode: "getComponent",
             blockType: Scratch.BlockType.REPORTER,
             text: "[COMPONENT] of [VECTOR]",
