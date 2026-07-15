@@ -328,6 +328,86 @@ export const blockConfigs: (
             );
         },
     },
+    {
+        block: {
+            opcode: "min",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "minimum of [A] and [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                B: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            return Math.min(
+                Number(args.A),
+                Number(args.B),
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "max",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "maximum of [A] and [B]",
+            arguments: {
+                A: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                B: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+            },
+        },
+        fn(args) {
+            return Math.max(
+                Number(args.A),
+                Number(args.B),
+            );
+        },
+    },
+    {
+        block: {
+            opcode: "clamp",
+            blockType: Scratch.BlockType.REPORTER,
+            text: "clamp [VALUE] between [MIN] and [MAX]",
+            arguments: {
+                VALUE: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 0,
+                },
+                MIN: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: -1,
+                },
+                MAX: {
+                    type: Scratch.ArgumentType.NUMBER,
+                    defaultValue: 1,
+                },
+            },
+        },
+        fn(args) {
+            const value = Number(args.VALUE);
+            const minimum = Number(args.MIN);
+            const maximum = Number(args.MAX);
+
+            const lowerBound = Math.min(minimum, maximum);
+            const upperBound = Math.max(minimum, maximum);
+
+            return Math.min(
+                Math.max(value, lowerBound),
+                upperBound,
+            );
+        },
+    },
     "Vector/Rotator ops",
     {
         block: {
